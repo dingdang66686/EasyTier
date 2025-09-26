@@ -1068,6 +1068,7 @@ impl PeerManager {
             .global_ctx
             .is_ip_in_same_network(&std::net::IpAddr::V4(*ipv4_addr))
         {
+            // First try to find configured exit nodes
             for exit_node in &self.exit_nodes {
                 let IpAddr::V4(exit_node) = exit_node else {
                     continue;
@@ -1077,6 +1078,13 @@ impl PeerManager {
                     is_exit_node = true;
                     break;
                 }
+            }
+            
+            // If no exit node peers found and this server is configured as exit node,
+            // use this server as the exit node (for VPN portal clients)
+            if dst_peers.is_empty() && self.global_ctx.enable_exit_node() {
+                dst_peers.push(self.my_peer_id.clone());
+                is_exit_node = true;
             }
         }
         #[cfg(target_env = "ohos")]
@@ -1109,6 +1117,7 @@ impl PeerManager {
             dst_peers.push(peer_id);
         } else if !ipv6_addr.is_unicast_link_local() {
             // NOTE: never route link local address to exit node.
+            // First try to find configured exit nodes
             for exit_node in &self.exit_nodes {
                 let IpAddr::V6(exit_node) = exit_node else {
                     continue;
@@ -1118,6 +1127,13 @@ impl PeerManager {
                     is_exit_node = true;
                     break;
                 }
+            }
+            
+            // If no exit node peers found and this server is configured as exit node,
+            // use this server as the exit node (for VPN portal clients)
+            if dst_peers.is_empty() && self.global_ctx.enable_exit_node() {
+                dst_peers.push(self.my_peer_id.clone());
+                is_exit_node = true;
             }
         }
 
