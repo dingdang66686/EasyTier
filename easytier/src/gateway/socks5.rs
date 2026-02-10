@@ -437,8 +437,9 @@ impl Socks5ServerNet {
                     .unwrap(),
                 vec![format!("{}", ipv4_addr.address()).parse().unwrap()],
                 Some(BufferSize {
-                    // Increased from 128KB to 512KB for high-performance TCP
-                    // This supports ~4Gbps at 1ms RTT or ~400Mbps at 10ms RTT
+                    // Use aggressive buffers for SOCKS5 server (512KB RX+TX = 1MB per connection)
+                    // SOCKS5 typically has fewer long-lived connections with high throughput needs
+                    // Provides ~4Gbps at 1ms RTT, ~400Mbps at 10ms RTT
                     tcp_rx_size: 512 * 1024,
                     tcp_tx_size: 512 * 1024,
                     ..Default::default()
