@@ -24,7 +24,7 @@ pub struct BufferSize {
 impl BufferSize {
     /// Conservative preset: Low memory usage (~32KB per connection)
     /// Suitable for: Memory-constrained systems, many connections
-    /// Performance: ~256Mbps at 1ms RTT, ~25Mbps at 10ms RTT
+    /// Performance: ~128Mbps at 1ms RTT, ~12.8Mbps at 10ms RTT
     pub fn conservative() -> Self {
         BufferSize {
             tcp_rx_size: 16 * 1024,   // 16KB
@@ -38,7 +38,7 @@ impl BufferSize {
 
     /// Moderate preset: Balanced (~128KB per connection)
     /// Suitable for: General use, moderate number of connections
-    /// Performance: ~1Gbps at 1ms RTT, ~100Mbps at 10ms RTT
+    /// Performance: ~512Mbps at 1ms RTT, ~51.2Mbps at 10ms RTT
     pub fn moderate() -> Self {
         BufferSize {
             tcp_rx_size: 64 * 1024,   // 64KB
@@ -52,7 +52,7 @@ impl BufferSize {
 
     /// Aggressive preset: High performance (~1MB per connection)
     /// Suitable for: High-bandwidth scenarios, few connections, ample memory
-    /// Performance: ~4Gbps at 1ms RTT, ~400Mbps at 10ms RTT
+    /// Performance: ~4Gbps at 1ms RTT, ~409.6Mbps at 10ms RTT
     pub fn aggressive() -> Self {
         BufferSize {
             tcp_rx_size: 512 * 1024,  // 512KB
@@ -80,17 +80,39 @@ impl BufferSize {
 
         // Check for custom size setting
         if let Ok(size_kb) = std::env::var("EASYTIER_TCP_BUFFER_SIZE") {
-            if let Ok(kb) = size_kb.parse::<usize>() {
-                let bytes = kb * 1024;
-                tracing::info!("Using custom TCP buffer size: {}KB", kb);
-                return BufferSize {
-                    tcp_rx_size: bytes,
-                    tcp_tx_size: bytes,
-                    udp_rx_size: 8192,
-                    udp_tx_size: 8192,
-                    udp_rx_meta_size: 32,
-                    udp_tx_meta_size: 32,
-                };
+            match size_kb.parse::<usize>() {
+                Ok(kb) => {
+                    // Validate reasonable bounds (max 10MB per buffer)
+                    if kb > 10 * 1024 {
+                        tracing::warn!("TCP buffer size {}KB exceeds maximum 10MB, using 10MB", kb);
+                        let bytes = 10 * 1024 * 1024;
+                        return BufferSize {
+                            tcp_rx_size: bytes,
+                            tcp_tx_size: bytes,
+                            udp_rx_size: 8192,
+                            udp_tx_size: 8192,
+                            udp_rx_meta_size: 32,
+                            udp_tx_meta_size: 32,
+                        };
+                    }
+                    
+                    let bytes = kb * 1024;
+                    tracing::info!("Using custom TCP buffer size: {}KB", kb);
+                    return BufferSize {
+                        tcp_rx_size: bytes,
+                        tcp_tx_size: bytes,
+                        udp_rx_size: 8192,
+                        udp_tx_size: 8192,
+                        udp_rx_meta_size: 32,
+                        udp_tx_meta_size: 32,
+                    };
+                }
+                Err(_) => {
+                    tracing::warn!(
+                        "Invalid TCP buffer size '{}', must be a number in KB. Using default.",
+                        size_kb
+                    );
+                }
             }
         }
 
@@ -102,7 +124,7 @@ impl BufferSize {
 impl Default for BufferSize {
     fn default() -> Self {
         // Use moderate profile by default as a balance between performance and memory
-        // This provides good performance (~1Gbps at 1ms RTT) while limiting memory usage
+        // This provides good performance (~512Mbps at 1ms RTT) while limiting memory usage
         // to ~128KB per connection (64KB RX + 64KB TX)
         //
         // Memory usage estimates:

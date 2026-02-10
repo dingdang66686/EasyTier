@@ -40,7 +40,7 @@ EasyTier provides three predefined profiles:
 EASYTIER_TCP_BUFFER_PROFILE=conservative
 ```
 - **Buffer Size**: 16KB RX + 16KB TX = 32KB per connection
-- **Performance**: ~256 Mbps at 1ms RTT, ~25 Mbps at 10ms RTT
+- **Performance**: ~128 Mbps at 1ms RTT, ~12.8 Mbps at 10ms RTT
 - **Memory**: 32KB per connection
 - **Best For**: 
   - Memory-constrained systems (IoT, embedded devices)
@@ -52,7 +52,7 @@ EASYTIER_TCP_BUFFER_PROFILE=conservative
 EASYTIER_TCP_BUFFER_PROFILE=moderate  # or not set
 ```
 - **Buffer Size**: 64KB RX + 64KB TX = 128KB per connection
-- **Performance**: ~1 Gbps at 1ms RTT, ~100 Mbps at 10ms RTT
+- **Performance**: ~512 Mbps at 1ms RTT, ~51.2 Mbps at 10ms RTT
 - **Memory**: 128KB per connection
 - **Best For**:
   - General purpose deployments
@@ -64,7 +64,7 @@ EASYTIER_TCP_BUFFER_PROFILE=moderate  # or not set
 EASYTIER_TCP_BUFFER_PROFILE=aggressive
 ```
 - **Buffer Size**: 512KB RX + 512KB TX = 1MB per connection
-- **Performance**: ~4 Gbps at 1ms RTT, ~400 Mbps at 10ms RTT
+- **Performance**: ~4 Gbps at 1ms RTT, ~409.6 Mbps at 10ms RTT
 - **Memory**: 1MB per connection
 - **Best For**:
   - High-bandwidth scenarios

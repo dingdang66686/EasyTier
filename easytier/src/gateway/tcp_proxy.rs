@@ -605,7 +605,7 @@ impl<C: NatDstConnector> TcpProxy<C> {
                     vec![format!("{}", self.get_local_ip().unwrap()).parse().unwrap()],
                     Some(BufferSize {
                         // Use moderate buffers for TCP proxy (64KB RX+TX = 128KB per connection)
-                        // Provides good balance: ~1Gbps at 1ms RTT, ~100Mbps at 10ms RTT
+                        // Provides good balance: ~512Mbps at 1ms RTT, ~51.2Mbps at 10ms RTT
                         // For higher performance, set EASYTIER_TCP_BUFFER_PROFILE=aggressive
                         tcp_rx_size: 64 * 1024,
                         tcp_tx_size: 64 * 1024,

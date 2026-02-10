@@ -439,7 +439,7 @@ impl Socks5ServerNet {
                 Some(BufferSize {
                     // Use aggressive buffers for SOCKS5 server (512KB RX+TX = 1MB per connection)
                     // SOCKS5 typically has fewer long-lived connections with high throughput needs
-                    // Provides ~4Gbps at 1ms RTT, ~400Mbps at 10ms RTT
+                    // Provides ~4Gbps at 1ms RTT, ~409.6Mbps at 10ms RTT
                     tcp_rx_size: 512 * 1024,
                     tcp_tx_size: 512 * 1024,
                     ..Default::default()
