@@ -24,8 +24,11 @@ pub struct BufferSize {
 impl Default for BufferSize {
     fn default() -> Self {
         BufferSize {
-            tcp_rx_size: 8192,
-            tcp_tx_size: 8192,
+            // Increased from 8KB to 256KB for better TCP performance
+            // This allows ~2Gbps throughput at 1ms RTT or ~200Mbps at 10ms RTT
+            // The buffer size directly affects TCP window size and throughput
+            tcp_rx_size: 256 * 1024,
+            tcp_tx_size: 256 * 1024,
 
             udp_rx_size: 8192,
             udp_tx_size: 8192,
