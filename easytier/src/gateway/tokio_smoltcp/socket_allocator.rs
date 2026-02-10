@@ -21,17 +21,123 @@ pub struct BufferSize {
     pub udp_tx_meta_size: usize,
 }
 
-impl Default for BufferSize {
-    fn default() -> Self {
+impl BufferSize {
+    /// Conservative preset: Low memory usage (~32KB per connection)
+    /// Suitable for: Memory-constrained systems, many connections
+    /// Performance: ~128Mbps at 1ms RTT, ~12.8Mbps at 10ms RTT
+    pub fn conservative() -> Self {
         BufferSize {
-            tcp_rx_size: 8192,
-            tcp_tx_size: 8192,
-
+            tcp_rx_size: 16 * 1024,   // 16KB
+            tcp_tx_size: 16 * 1024,   // 16KB
             udp_rx_size: 8192,
             udp_tx_size: 8192,
             udp_rx_meta_size: 32,
             udp_tx_meta_size: 32,
         }
+    }
+
+    /// Moderate preset: Balanced (~128KB per connection)
+    /// Suitable for: General use, moderate number of connections
+    /// Performance: ~512Mbps at 1ms RTT, ~51.2Mbps at 10ms RTT
+    pub fn moderate() -> Self {
+        BufferSize {
+            tcp_rx_size: 64 * 1024,   // 64KB
+            tcp_tx_size: 64 * 1024,   // 64KB
+            udp_rx_size: 8192,
+            udp_tx_size: 8192,
+            udp_rx_meta_size: 32,
+            udp_tx_meta_size: 32,
+        }
+    }
+
+    /// Aggressive preset: High performance (~1MB per connection)
+    /// Suitable for: High-bandwidth scenarios, few connections, ample memory
+    /// Performance: ~4Gbps at 1ms RTT, ~409.6Mbps at 10ms RTT
+    pub fn aggressive() -> Self {
+        BufferSize {
+            tcp_rx_size: 512 * 1024,  // 512KB
+            tcp_tx_size: 512 * 1024,  // 512KB
+            udp_rx_size: 8192,
+            udp_tx_size: 8192,
+            udp_rx_meta_size: 32,
+            udp_tx_meta_size: 32,
+        }
+    }
+
+    /// Get buffer size from environment variable or use default
+    /// EASYTIER_TCP_BUFFER_PROFILE: conservative, moderate, aggressive
+    /// EASYTIER_TCP_BUFFER_SIZE: custom size in KB
+    pub fn from_env() -> Self {
+        // Check for profile setting
+        if let Ok(profile) = std::env::var("EASYTIER_TCP_BUFFER_PROFILE") {
+            match profile.to_lowercase().as_str() {
+                "conservative" => return Self::conservative(),
+                "moderate" => return Self::moderate(),
+                "aggressive" => return Self::aggressive(),
+                _ => tracing::warn!("Unknown buffer profile '{}', using default", profile),
+            }
+        }
+
+        // Check for custom size setting
+        if let Ok(size_kb) = std::env::var("EASYTIER_TCP_BUFFER_SIZE") {
+            match size_kb.parse::<usize>() {
+                Ok(kb) => {
+                    // Validate reasonable bounds (max 10MB per buffer)
+                    if kb > 10 * 1024 {
+                        tracing::warn!("TCP buffer size {}KB exceeds maximum 10MB, using 10MB", kb);
+                        let bytes = 10 * 1024 * 1024;
+                        return BufferSize {
+                            tcp_rx_size: bytes,
+                            tcp_tx_size: bytes,
+                            udp_rx_size: 8192,
+                            udp_tx_size: 8192,
+                            udp_rx_meta_size: 32,
+                            udp_tx_meta_size: 32,
+                        };
+                    }
+                    
+                    let bytes = kb * 1024;
+                    tracing::info!("Using custom TCP buffer size: {}KB", kb);
+                    return BufferSize {
+                        tcp_rx_size: bytes,
+                        tcp_tx_size: bytes,
+                        udp_rx_size: 8192,
+                        udp_tx_size: 8192,
+                        udp_rx_meta_size: 32,
+                        udp_tx_meta_size: 32,
+                    };
+                }
+                Err(_) => {
+                    tracing::warn!(
+                        "Invalid TCP buffer size '{}', must be a number in KB. Using default.",
+                        size_kb
+                    );
+                }
+            }
+        }
+
+        // Default to moderate
+        Self::moderate()
+    }
+}
+
+impl Default for BufferSize {
+    fn default() -> Self {
+        // Use moderate profile by default as a balance between performance and memory
+        // This provides good performance (~512Mbps at 1ms RTT) while limiting memory usage
+        // to ~128KB per connection (64KB RX + 64KB TX)
+        //
+        // Memory usage estimates:
+        // - 100 connections: ~12.5MB
+        // - 1000 connections: ~125MB
+        // - 10000 connections: ~1.25GB
+        //
+        // For different scenarios, use environment variables:
+        // - EASYTIER_TCP_BUFFER_PROFILE=conservative (16KB, low memory)
+        // - EASYTIER_TCP_BUFFER_PROFILE=moderate (64KB, balanced - default)
+        // - EASYTIER_TCP_BUFFER_PROFILE=aggressive (512KB, high performance)
+        // - EASYTIER_TCP_BUFFER_SIZE=128 (custom size in KB)
+        Self::from_env()
     }
 }
 
